@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spoken Nursing Care Plan: Procedural Workflow & Clinical Safety Matrix</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #0b1329 0%, #172554 50%, #0f172a 100%);
+    }
+
+    /* Screen Shake Animation on Wrong Sequence */
+    @keyframes bamShake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      10% { transform: translate(-3px, -2px) rotate(-1deg); }
+      20% { transform: translate(-5px, 0px) rotate(1deg); }
+      30% { transform: translate(5px, 2px) rotate(0deg); }
+      40% { transform: translate(1px, -1px) rotate(1deg); }
+      50% { transform: translate(-1px, 2px) rotate(-1deg); }
+      60% { transform: translate(-3px, 1px) rotate(0deg); }
+      70% { transform: translate(3px, 1px) rotate(-1deg); }
+      80% { transform: translate(-1px, -1px) rotate(1deg); }
+      90% { transform: translate(2px, 2px) rotate(0deg); }
+      100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+
+    .bam-shake {
+      animation: bamShake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Pulse Glows */
+    .glow-step {
+      box-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+    }
+  </style>
+</head>
+<body class="gradient-bg text-slate-100 min-h-screen flex flex-col font-sans select-none overflow-x-hidden">
+
+  <!-- TOP HEADER & AUTHOR CREDITS -->
+  <header class="bg-slate-900/90 backdrop-blur border-b border-slate-700/80 sticky top-0 z-40 px-4 py-3 shadow-xl">
+    <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <h1 class="text-xl md:text-2xl font-black text-teal-400 tracking-wide flex items-center gap-2">
+          🏥 Procedural Workflow & Clinical Safety Matrix
+        </h1>
+        <p class="text-xs text-slate-400">Curriculum & Game Architecture by <span class="text-amber-300 font-bold">Giyono Asfarrasyid</span></p>
+      </div>
+      <div id="playerBadge" class="hidden text-right text-xs bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl shadow-inner">
+        <div class="text-slate-400">Taker: <span id="displayTakerName" class="text-amber-300 font-extrabold"></span></div>
+        <div class="text-slate-400">ID: <span id="displayTakerID" class="text-sky-300 font-bold"></span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN GAME AREA -->
+  <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+
+    <!-- REGISTRATION OVERLAY / SCREEN 1 -->
+    <section id="registrationSection" class="bg-slate-800/95 border border-slate-700/80 rounded-2xl p-6 md:p-8 shadow-2xl max-w-xl mx-auto w-full">
+      <div class="text-center mb-6">
+        <div class="inline-block bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-2">
+          Clinical Priority Challenge
+        </div>
+        <h2 class="text-2xl md:text-3xl font-black text-white">4-Step Workflow Matrix</h2>
+        <p class="text-xs md:text-sm text-slate-400 mt-2">
+          Listen to the scenario (👨 Male Voice). Arrange the 4 procedural actions (👩 Female Voice) in exact priority sequence:
+        </p>
+        <div class="grid grid-cols-2 gap-2 mt-4 text-left text-xs bg-slate-950/80 p-3 rounded-xl border border-slate-700">
+          <div class="text-teal-300"><strong class="text-teal-400">Step 1:</strong> Tools & Devices</div>
+          <div class="text-amber-300"><strong class="text-amber-400">Step 2:</strong> Procedure & Mechanism</div>
+          <div class="text-rose-300"><strong class="text-rose-400">Step 3:</strong> Harm & Prevention</div>
+          <div class="text-emerald-300"><strong class="text-emerald-400">Step 4:</strong> Completion & Handoff</div>
+        </div>
+      </div>
+
+      <form id="startForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Test Taker Name</label>
+          <input type="text" id="takerNameInput" required placeholder="e.g., Nurse Alex Santos" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white text-sm focus:border-teal-400 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Employee / Student ID</label>
+          <input type="text" id="takerIDInput" required placeholder="e.g., NURS-2026-901" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white text-sm focus:border-teal-400 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Select Module Focus</label>
+          <select id="moduleSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white text-sm focus:border-teal-400 outline-none transition">
+            <option value="ALL">All 20 Clinical Modules (Full Random Matrix)</option>
+            <!-- Module options added dynamically -->
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-black p-4 rounded-xl text-lg shadow-xl transition transform active:scale-98">
+          🚀 START WORKFLOW MATRIX GAME
+        </button>
+      </form>
+    </section>
+
+    <!-- ACTIVE GAMEPLAY SCREEN / SCREEN 2 -->
+    <section id="gameplaySection" class="hidden space-y-5">
+      
+      <!-- SCOREBOARD HEADER -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-slate-800/90 border border-slate-700/80 p-3 rounded-xl text-center">
+          <span class="text-xs font-bold text-slate-400 uppercase">Total Score</span>
+          <div id="scoreDisplay" class="text-2xl md:text-3xl font-black text-amber-400">0</div>
+        </div>
+        <div class="bg-slate-800/90 border border-slate-700/80 p-3 rounded-xl text-center">
+          <span class="text-xs font-bold text-slate-400 uppercase">Correct Streak</span>
+          <div id="streakDisplay" class="text-2xl md:text-3xl font-black text-emerald-400">0 🔥</div>
+        </div>
+        <div class="bg-slate-800/90 border border-slate-700/80 p-3 rounded-xl text-center">
+          <span class="text-xs font-bold text-slate-400 uppercase">Case Progress</span>
+          <div id="progressDisplay" class="text-xl md:text-2xl font-black text-teal-300">Case 1 / 20</div>
+        </div>
+        <div class="bg-slate-800/90 border border-slate-700/80 p-3 rounded-xl text-center flex items-center justify-center">
+          <button id="speakerScenarioBtn" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/50 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+            👨🔊 Replay Scenario (Male)
+          </button>
+        </div>
+      </div>
+
+      <!-- SEQUENCE TRACKER STEP BAR -->
+      <div class="bg-slate-900/90 border border-slate-700 p-4 rounded-2xl">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold uppercase text-slate-400">Required Workflow Order:</span>
+          <span id="currentStepTargetText" class="text-xs font-extrabold text-teal-400 animate-pulse">Waiting for Step 1...</span>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold">
+          <div id="stepIndicator1" class="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-500 transition">
+            1. Tools & Setup
+          </div>
+          <div id="stepIndicator2" class="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-500 transition">
+            2. Procedure
+          </div>
+          <div id="stepIndicator3" class="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-500 transition">
+            3. Harm & Safety
+          </div>
+          <div id="stepIndicator4" class="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-500 transition">
+            4. Completion
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENARIO CARD -->
+      <div id="scenarioBox" class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span id="moduleBadge" class="bg-teal-900/80 text-teal-300 text-xs font-bold px-3 py-1 rounded-full border border-teal-500/40 uppercase">
+            Module Badge
+          </span>
+          <span class="text-xs text-slate-400 italic">Setting: <span id="settingText" class="text-slate-200">ICU Bedside</span></span>
+        </div>
+        <h3 class="text-xs font-bold uppercase text-slate-400 mb-1">Clinical Case Scenario (Male Voice 👨🔊):</h3>
+        <p id="scenarioPrompt" class="text-base md:text-lg font-black text-white bg-slate-950 p-4 rounded-xl border border-slate-700/80 text-teal-200">
+          Loading scenario...
+        </p>
+      </div>
+
+      <!-- ERROR / BAM WARNING OVERLAY -->
+      <div id="bamBanner" class="hidden bg-rose-600/90 text-white p-3 rounded-xl text-center font-black text-base shadow-2xl animate-bounce border-2 border-rose-300">
+        💥 BAM! INCORRECT SEQUENCE! (-100 Points & Sequence Reset)
+      </div>
+
+      <!-- SHUFFLED PROCEDURAL STEP CARDS -->
+      <div>
+        <p class="text-xs text-slate-400 mb-2 font-semibold">
+          Click cards in strict order (1 ➔ 2 ➔ 3 ➔ 4). Tap 👩🔊 to listen with Female Voice:
+        </p>
+        <div id="proceduralCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Cards injected dynamically -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RESULTS / FINAL SCORE CARD / SCREEN 3 -->
+    <section id="resultsSection" class="hidden bg-slate-800/95 border border-slate-700/80 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6 max-w-2xl mx-auto w-full">
+      <div class="text-center bg-slate-900 p-6 rounded-2xl border border-slate-700">
+        <h2 class="text-2xl font-black text-teal-400 uppercase tracking-wide">Workflow Matrix Complete!</h2>
+        <div id="finalScoreDisplay" class="text-5xl font-black my-4 text-amber-400">0 Pts</div>
+        <p id="finalSummaryText" class="text-sm text-slate-300">Great job completing the 20 procedural modules.</p>
+        <div id="finalGradeBadge" class="mt-4 inline-block px-5 py-2 rounded-full font-bold text-xs uppercase tracking-wider">
+          Performance Status
+        </div>
+      </div>
+
+      <div class="flex justify-center gap-4">
+        <button id="restartGameBtn" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-black px-8 py-3 rounded-xl shadow-xl hover:from-teal-400 hover:to-emerald-400 transition">
+          🔄 Play Again
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-950 border-t border-slate-800 p-4 text-center text-xs text-slate-500">
+    <p>Spoken Nursing Care Plan • Procedural Workflow & Clinical Safety Matrix</p>
+    <p class="mt-1">Content & Pedagogical Design © Giyono Asfarrasyid</p>
+  </footer>
+
+  <!-- AUDIO SYNTHESIS & GAME LOGIC ENGINE -->
+  <script>
+    // --- WEB AUDIO SOUND EFFECTS (BAM BUZZER & VICTORY FANFARE) ---
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+      }
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+      playBuzzer() {
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.35);
+      }
+      playFanfare() {
+        this.init();
+        if (!this.ctx) return;
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + (idx * 0.08));
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime + (idx * 0.08));
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + (idx * 0.08) + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + (idx * 0.08));
+          osc.stop(this.ctx.currentTime + (idx * 0.08) + 0.25);
+        });
+      }
+    }
+    const sfx = new SoundFX();
+
+    // --- DUAL VOICE TTS SYSTEM ---
+    class DualVoiceSpeech {
+      constructor() {
+        this.synth = window.speechSynthesis;
+        this.voices = [];
+        this.init();
+      }
+      init() {
+        if (!this.synth) return;
+        const load = () => { this.voices = this.synth.getVoices(); };
+        load();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+          speechSynthesis.onvoiceschanged = load;
+        }
+      }
+      getVoice(gender) {
+        if (!this.voices || this.voices.length === 0) return null;
+        const en = this.voices.filter(v => v.lang.startsWith('en'));
+        if (gender === 'male') {
+          return en.find(v => v.name.includes('Male') || v.name.includes('David') || v.name.includes('George')) || en[0];
+        } else {
+          return en.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Samantha') || v.name.includes('Hazel')) || en[1] || en[0];
+        }
+      }
+      speak(text, gender = 'female') {
+        if (!this.synth) return;
+        this.synth.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US';
+        u.rate = 0.92;
+        const voice = this.getVoice(gender);
+        if (voice) u.voice = voice;
+        u.pitch = (gender === 'male') ? 0.85 : 1.25;
+        this.synth.speak(u);
+      }
+    }
+    const tts = new DualVoiceSpeech();
+
+    // --- 20 CLINICAL MODULES DATA MATRIX (MAPPED TO 4-STEP WORKFLOW) ---
+    const clinicalModulesMatrix = [
+      {
+        id: 1,
+        title: "Module 1: Intake & Physical Assessment",
+        setting: "Emergency Triage Bay",
+        prompt: "A 58-year-old male arrives complaining of acute retrosternal chest pain radiating to his left shoulder.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Assemble 12-lead ECG machine, pulse oximeter, blood pressure cuff, and stethoscope." },
+          { step: 2, type: "Procedure & Mechanism", text: "Position patient in semi-Fowler's, apply 12-lead ECG leads, and assess bilateral breath sounds." },
+          { step: 3, type: "Harm & Safety", text: "Watch for rapid desaturation or cardiac arrhythmogenesis; ensure defibrillator pads are ready." },
+          { step: 4, type: "Completion & Handoff", text: "Log baseline vitals in EHR and notify cardiology team immediately via emergency alert." }
+        ]
+      },
+      {
+        id: 2,
+        title: "Module 2: Vital Signs & Hemodynamics",
+        setting: "Medical Ward",
+        prompt: "A postoperative patient presents with tachycardia (HR 124 bpm) and hypotension (BP 84/52 mmHg).",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Obtain automated arterial monitor, manual sphygmomanometer, and continuous SpO2 sensor." },
+          { step: 2, type: "Procedure & Mechanism", text: "Re-verify manual blood pressure, evaluate capillary refill, and check core body temperature." },
+          { step: 3, type: "Harm & Safety", text: "Prevent hypovolemic shock decompensation by keeping patient flat and avoiding rapid position changes." },
+          { step: 4, type: "Completion & Handoff", text: "Document vital trend graph and escalate urgent fluid bolus request to attending physician." }
+        ]
+      },
+      {
+        id: 3,
+        title: "Module 3: Nursing Care Planning & NANDA",
+        setting: "Respiratory Care Unit",
+        prompt: "Patient with severe pneumonia exhibits thick tracheobronchial secretions and dyspnea.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Gather inline suction catheter, sterile saline flushes, wall suction tubing, and hyperoxygenation kit." },
+          { step: 2, type: "Procedure & Mechanism", text: "Formulate diagnosis 'Ineffective Airway Clearance' and initiate chest physiotherapy with deep coughing." },
+          { step: 3, type: "Harm & Safety", text: "Avoid prolonged airway suctioning exceeding 10 seconds to prevent profound hypoxia and bradycardia." },
+          { step: 4, type: "Completion & Handoff", text: "Record sputum viscosity/color in Care Plan and hand over pulmonary response to night shift." }
+        ]
+      },
+      {
+        id: 4,
+        title: "Module 4: ISBAR Physician Escalation",
+        setting: "Surgical Step-Down",
+        prompt: "Abdominal surgical wound site shows sudden active arterial bleeding through saturated dressings.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Prepare sterile pressure dressings, abdominal binder, IV start kit, and ISBAR report template." },
+          { step: 2, type: "Procedure & Mechanism", text: "Apply direct firm pressure over surgical wound and place patient in supine position with legs elevated." },
+          { step: 3, type: "Harm & Safety", text: "Prevent hemorrhagic shock by avoiding premature removal of saturated gauze layers." },
+          { step: 4, type: "Completion & Handoff", text: "Call attending surgeon using ISBAR structure: 'Active hemorrhage noted at midline incision.'" }
+        ]
+      },
+      {
+        id: 5,
+        title: "Module 5: Medication Safety & Rights",
+        setting: "General Medicine",
+        prompt: "Administering high-alert intravenous insulin glargine and sliding-scale regular insulin.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Retrieve MAR bar code scanner, calibrated U-100 insulin syringe, and dual-nurse verification sign sheet." },
+          { step: 2, type: "Procedure & Mechanism", text: "Verify 6 rights of medication, cross-check dose with second RN, and inspect point-of-care blood glucose." },
+          { step: 3, type: "Harm & Safety", text: "Prevent severe neuroglycopenic hypoglycemia by verifying meal tray is present at bedside prior to injection." },
+          { step: 4, type: "Completion & Handoff", text: "Sign eMAR with witness nurse credentials and re-check blood sugar levels at 30-minute mark." }
+        ]
+      },
+      {
+        id: 6,
+        title: "Module 6: Sterile Wound Care & Debridement",
+        setting: "Wound Care Clinic",
+        prompt: "Performing complex sterile dressing change on a Stage 3 sacral pressure injury.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Set up sterile field drape, sterile gloves, wound measuring tape, hydrocolloid dressing, and saline rinse." },
+          { step: 2, type: "Procedure & Mechanism", text: "Don sterile gloves, cleanse wound from inner center outward with normal saline, and measure tunnel depth." },
+          { step: 3, type: "Harm & Safety", text: "Prevent nosocomial cross-contamination by keeping hands strictly above waist line over sterile field." },
+          { step: 4, type: "Completion & Handoff", text: "Label outer dressing with date, time, and initials; chart tissue bed color percentage in EHR." }
+        ]
+      },
+      {
+        id: 7,
+        title: "Module 7: IV Line Management & Infiltration",
+        setting: "Inpatient Pavilion",
+        prompt: "Patient reports sharp burning pain at peripheral IV site during potassium chloride infusion.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Gather IV insertion tray, 0.9% saline flush syringes, chlorhexidine swab, and transparent occlusive dressing." },
+          { step: 2, type: "Procedure & Mechanism", text: "Stop infusion instantly, aspirate remaining medication from cannula, and remove infiltrated peripheral IV." },
+          { step: 3, type: "Harm & Safety", text: "Prevent vesicant-induced tissue necrosis; apply cold or warm compress per hospital chemical protocol." },
+          { step: 4, type: "Completion & Handoff", text: "Document infiltration grade (Grade 2/3) and establish new peripheral IV access in contralateral arm." }
+        ]
+      },
+      {
+        id: 8,
+        title: "Module 8: Shift Handover & Bedside Report",
+        setting: "Medical-Surgical Unit",
+        prompt: "Conducting change-of-shift handover report at the patient's bedside.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Bring printed shift summary sheet, medication administration log, and bedside handover checklist." },
+          { step: 2, type: "Procedure & Mechanism", text: "Introduce oncoming RN to patient, review line fluids together, and safety check wall suction/oxygen." },
+          { step: 3, type: "Harm & Safety", text: "Prevent patient misidentification errors by cross-matching wristband barcode with incoming nurse." },
+          { step: 4, type: "Completion & Handoff", text: "Obtain patient feedback on pain goals and document completion of handover in nursing notes." }
+        ]
+      },
+      {
+        id: 9,
+        title: "Module 9: Pediatric Care & Communication",
+        setting: "Pediatric Ward",
+        prompt: "A 4-year-old child needs a nebulizer breathing treatment and is terrified of the mask.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Assemble pediatric compressor unit, teddy-bear styled nebulizer mask, and prescribed albuterol solution." },
+          { step: 2, type: "Procedure & Mechanism", text: "Demonstrate mask placement on teddy bear first, using play-therapy language ('making magic dragon mist')." },
+          { step: 3, type: "Harm & Safety", text: "Prevent pediatric bronchospasm distress; monitor child's pulse rate and calm parental anxieties." },
+          { step: 4, type: "Completion & Handoff", text: "Praise child with reward sticker, record post-treatment wheeze reduction, and inform pediatrician." }
+        ]
+      },
+      {
+        id: 10,
+        title: "Module 10: Critical Care Escalation & Code Blue",
+        setting: "ICU / Telemetry",
+        prompt: "Telemetry monitor signals sudden ventricular fibrillation; patient is unresponsive without pulse.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Pull Code Blue emergency crash cart, backboard, biphasic defibrillator, and bag-valve mask." },
+          { step: 2, type: "Procedure & Mechanism", text: "Place backboard, start high-quality chest compressions at 100-120/min, and charge defibrillator to 200J." },
+          { step: 3, type: "Harm & Safety", text: "Prevent rescuer electrocution during shock delivery by loudly clearing bedside ('Clear all!')." },
+          { step: 4, type: "Completion & Handoff", text: "Record event timeline, epinephrine dosage intervals, and debrief critical care response team." }
+        ]
+      },
+      {
+        id: 11,
+        title: "Module 11: Isolation Protocols & PPE",
+        setting: "Infectious Disease Isolation",
+        prompt: "Entering room of patient confirmed positive for airborne active Pulmonary Tuberculosis.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Collect fit-tested N95 respirator, fluid-resistant gown, clean gloves, and eye goggles." },
+          { step: 2, type: "Procedure & Mechanism", text: "Perform hand hygiene, don gown, secure N95 with seal-check, attach eye protection, and put on gloves." },
+          { step: 3, type: "Harm & Safety", text: "Prevent airborne cross-contamination; maintain negative pressure room door fully closed at all times." },
+          { step: 4, type: "Completion & Handoff", text: "Doff PPE in proper order inside anteroom without touching front surfaces and sanitize hands." }
+        ]
+      },
+      {
+        id: 12,
+        title: "Module 12: Discharge Planning & Teaching",
+        setting: "Outpatient Discharge Lounge",
+        prompt: "Preparing a newly diagnosed type 2 diabetic patient for discharge home on subcut insulin.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Gather discharge summary packet, insulin pen trainer, blood glucose logbook, and sharps container." },
+          { step: 2, type: "Procedure & Mechanism", text: "Conduct teach-back session on glucose monitoring, hypoglycemia signs, and subcutaneous pen technique." },
+          { step: 3, type: "Harm & Safety", text: "Prevent fatal home hypoglycemia by verifying patient can state 15-gram fast-acting sugar rule." },
+          { step: 4, type: "Completion & Handoff", text: "Confirm follow-up endocrinology appointment date and document patient teach-back mastery in EHR." }
+        ]
+      },
+      {
+        id: 13,
+        title: "Module 13: Perioperative Care & Safety Checklist",
+        setting: "Pre-Op Holding Area",
+        prompt: "Preparing patient for elective laparoscopic cholecystectomy surgical procedure.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Obtain WHO Surgical Safety Checklist, surgical skin marker, anti-embolism stockings, and ID band." },
+          { step: 2, type: "Procedure & Mechanism", text: "Verify NPO status, mark surgical site with surgeon, check consent form, and administer pre-op antibiotic." },
+          { step: 3, type: "Harm & Safety", text: "Prevent wrong-site surgical errors by leading mandatory time-out pause before anesthesia induction." },
+          { step: 4, type: "Completion & Handoff", text: "Hand over patient to Operating Room holding nurse with complete chart and labeled allergy band." }
+        ]
+      },
+      {
+        id: 14,
+        title: "Module 14: Psychiatric & Behavioral Crisis",
+        setting: "Acute Behavioral Health",
+        prompt: "Patient experiencing acute mania becomes verbally aggressive and approaches nursing station.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Ensure panic button access, clear heavy moveable objects from area, and alert de-escalation team." },
+          { step: 2, type: "Procedure & Mechanism", text: "Maintain calm, low voice tone, stand at 45-degree angle 6 feet away, and offer voluntary soothing space." },
+          { step: 3, type: "Harm & Safety", text: "Prevent physical trauma or injury; avoid trapping patient against corner or invading personal space." },
+          { step: 4, type: "Completion & Handoff", text: "Chart agitation trigger event, de-escalation response, and notify psychiatric provider." }
+        ]
+      },
+      {
+        id: 15,
+        title: "Module 15: Oncology & Chemotherapy Safety",
+        setting: "Infusion Center",
+        prompt: "Administering IV vesicant chemotherapy agent (Doxorubicin) to oncology patient.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Obtain chemo spill kit, chemotherapy-tested gloves, protective gown, and closed-system transfer device." },
+          { step: 2, type: "Procedure & Mechanism", text: "Verify dual-oncology nurse dosage verification, confirm blood return from central line catheter before infusing." },
+          { step: 3, type: "Harm & Safety", text: "Prevent hazardous drug exposure and extravasation tissue sloughing; check blood return every 5 minutes." },
+          { step: 4, type: "Completion & Handoff", text: "Dispose Chemo IV bags in yellow biohazard container and document cumulative lifetime drug dosage." }
+        ]
+      },
+      {
+        id: 16,
+        title: "Module 16: ER Triage & Mass Casualty",
+        setting: "Emergency Department Triage",
+        prompt: "Multiple vehicle collision results in triage influx; patient presents with open femur fracture.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Retrieve START triage tags, cervical collar, trauma shears, and sterile pressure dressings." },
+          { step: 2, type: "Procedure & Mechanism", text: "Assign Yellow/Red triage tag, immobilize cervical spine, control hemorrhage, and check distal pulses." },
+          { step: 3, type: "Harm & Safety", text: "Prevent spinal cord transection and shock; avoid moving patient without hard backboard stabilization." },
+          { step: 4, type: "Completion & Handoff", text: "Transfer patient to Red Trauma Bay 1 and hand over triage assessment score to trauma team leader." }
+        ]
+      },
+      {
+        id: 17,
+        title: "Module 17: Community Health & Outpatient Immunization",
+        setting: "Public Health Clinic",
+        prompt: "Administering annual influenza and pneumococcal vaccines during community health drive.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Prepare cold-chain vaccine vial, 1-inch 23G needle, alcohol prep pads, and epinephrine auto-injector." },
+          { step: 2, type: "Procedure & Mechanism", text: "Administer 0.5 mL IM into deltoid muscle at 90-degree angle after screening for egg allergy." },
+          { step: 3, type: "Harm & Safety", text: "Prevent anaphylactic shock reaction; mandate 15-minute observation period post-vaccination." },
+          { step: 4, type: "Completion & Handoff", text: "Log vaccine lot number and expiration date in state immunization registry and issue card." }
+        ]
+      },
+      {
+        id: 18,
+        title: "Module 18: Home Health Care & Environmental Safety",
+        setting: "Elderly Patient Home",
+        prompt: "Conducting home safety assessment for elderly patient with unsteady gait and oxygen therapy.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Bring home safety audit checklist, pulse oximeter, blood pressure cuff, and fall risk tape." },
+          { step: 2, type: "Procedure & Mechanism", text: "Inspect home for throw rugs, clutter, inadequate lighting, and verify oxygen tank clearance from gas stove." },
+          { step: 3, type: "Harm & Safety", text: "Prevent catastrophic home fire explosion by instructing family on strict 'No Smoking Near Oxygen' rules." },
+          { step: 4, type: "Completion & Handoff", text: "Submit home environmental safety assessment to case manager and schedule physical therapy." }
+        ]
+      },
+      {
+        id: 19,
+        title: "Module 19: Geriatric Mobility & Fall Prevention",
+        setting: "Long-Term Care Facility",
+        prompt: "Assisting an 82-year-old resident with history of stroke to transfer from bed to wheelchair.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Fetch nonskid footwear, gait belt, lockable wheelchair, and verify mechanical lift availability." },
+          { step: 2, type: "Procedure & Mechanism", text: "Apply gait belt securely around waist, pivot toward patient's strong side while keeping knees braced." },
+          { step: 3, type: "Harm & Safety", text: "Prevent severe hip fracture falls; never pull patient by arms or allow transfer without locked wheels." },
+          { step: 4, type: "Completion & Handoff", text: "Ensure call light is within reach in wheelchair and chart mobility transfer assistance level." }
+        ]
+      },
+      {
+        id: 20,
+        title: "Module 20: Palliative & End-of-Life Comfort Care",
+        setting: "Hospice Suite",
+        prompt: "Terminal cancer patient experiencing noisy, congested death rattle breathing in final hours.",
+        steps: [
+          { step: 1, type: "Tools & Devices", text: "Gather sublingual anticholinergic drops (Atropine), oral swab sponges, and repositioning pillows." },
+          { step: 2, type: "Procedure & Mechanism", text: "Reposition patient onto side to favor oral drainage and administer sublingual atropine as prescribed." },
+          { step: 3, type: "Harm & Safety", text: "Avoid traumatic deep tracheal suctioning which causes distress and agitates end-of-life calm." },
+          { step: 4, type: "Completion & Handoff", text: "Provide emotional support to family members and document comfort score in hospice log." }
+        ]
+      }
+    ];
+
+    // --- GAME STATE ---
+    let activeModules = [];
+    let currentModuleIndex = 0;
+    let currentStepTarget = 1; // Needs Step 1, 2, 3, or 4
+    let totalScore = 0;
+    let streakCount = 0;
+    let takerName = "";
+    let takerID = "";
+
+    // --- DOM REFERENCES ---
+    const registrationSection = document.getElementById('registrationSection');
+    const gameplaySection = document.getElementById('gameplaySection');
+    const resultsSection = document.getElementById('resultsSection');
+    const startForm = document.getElementById('startForm');
+    const moduleSelect = document.getElementById('moduleSelect');
+    const playerBadge = document.getElementById('playerBadge');
+    const displayTakerName = document.getElementById('displayTakerName');
+    const displayTakerID = document.getElementById('displayTakerID');
+
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const streakDisplay = document.getElementById('streakDisplay');
+    const progressDisplay = document.getElementById('progressDisplay');
+    const currentStepTargetText = document.getElementById('currentStepTargetText');
+    const moduleBadge = document.getElementById('moduleBadge');
+    const settingText = document.getElementById('settingText');
+    const scenarioPrompt = document.getElementById('scenarioPrompt');
+    const speakerScenarioBtn = document.getElementById('speakerScenarioBtn');
+    const proceduralCardsContainer = document.getElementById('proceduralCardsContainer');
+    const bamBanner = document.getElementById('bamBanner');
+
+    const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+    const finalSummaryText = document.getElementById('finalSummaryText');
+    const finalGradeBadge = document.getElementById('finalGradeBadge');
+    const restartGameBtn = document.getElementById('restartGameBtn');
+
+    // --- POPULATE MODULE SELECT ---
+    clinicalModulesMatrix.forEach(mod => {
+      const opt = document.createElement('option');
+      opt.value = mod.id;
+      opt.textContent = `${mod.title}`;
+      moduleSelect.appendChild(opt);
+    });
+
+    // --- START GAME LISTENER ---
+    startForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      takerName = document.getElementById('takerNameInput').value.trim();
+      takerID = document.getElementById('takerIDInput').value.trim();
+      const selVal = moduleSelect.value;
+
+      displayTakerName.textContent = takerName;
+      displayTakerID.textContent = takerID;
+      playerBadge.classList.remove('hidden');
+
+      if (selVal === "ALL") {
+        activeModules = [...clinicalModulesMatrix].sort(() => Math.random() - 0.5);
+      } else {
+        const found = clinicalModulesMatrix.find(m => m.id === parseInt(selVal));
+        activeModules = [found];
+      }
+
+      currentModuleIndex = 0;
+      totalScore = 0;
+      streakCount = 0;
+      
+      registrationSection.classList.add('hidden');
+      resultsSection.classList.add('hidden');
+      gameplaySection.classList.remove('hidden');
+
+      updateScoreboard();
+      loadCurrentCase();
+    });
+
+    // --- LOAD CASE ---
+    const loadCurrentCase = () => {
+      currentStepTarget = 1;
+      resetStepIndicators();
+      bamBanner.classList.add('hidden');
+
+      const currentCase = activeModules[currentModuleIndex];
+      progressDisplay.textContent = `Case ${currentModuleIndex + 1} / ${activeModules.length}`;
+      moduleBadge.textContent = currentCase.title;
+      settingText.textContent = currentCase.setting;
+      scenarioPrompt.textContent = currentCase.prompt;
+
+      // Auto-speak Male Voice Scenario Prompt
+      tts.speak(currentCase.prompt, 'male');
+
+      // Prepare Shuffled Cards
+      const shuffledSteps = [...currentCase.steps].sort(() => Math.random() - 0.5);
+      renderCards(shuffledSteps);
+      updateTargetText();
+    };
+
+    // --- RENDER PROCEDURAL CARDS ---
+    const renderCards = (stepsArr) => {
+      proceduralCardsContainer.innerHTML = '';
+      stepsArr.forEach((stepObj) => {
+        const card = document.createElement('div');
+        card.dataset.step = stepObj.step;
+        card.className = `procedural-card bg-slate-900 border-2 border-slate-700/80 hover:border-teal-400 p-4 rounded-xl cursor-pointer transition transform active:scale-98 flex items-start justify-between gap-3 shadow-lg select-none`;
+        card.innerHTML = `
+          <div class="flex-grow">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-slate-500"></span> Action Step Option
+            </div>
+            <p class="text-sm font-semibold text-slate-100">${stepObj.text}</p>
+          </div>
+          <button class="tts-female-btn bg-slate-800 hover:bg-slate-700 text-teal-300 p-2.5 rounded-xl border border-slate-600 transition flex-shrink-0 text-xs font-bold" title="Listen with Female Voice">
+            👩🔊
+          </button>
+        `;
+
+        // Card click handles priority step checking
+        card.addEventListener('click', (e) => {
+          if (!e.target.closest('.tts-female-btn')) {
+            handleCardClick(card, stepObj);
+          }
+        });
+
+        // TTS Female Voice Button
+        const ttsBtn = card.querySelector('.tts-female-btn');
+        ttsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          tts.speak(stepObj.text, 'female');
+        });
+
+        proceduralCardsContainer.appendChild(card);
+      });
+    };
+
+    // --- CARD CLICK LOGIC & SEQUENCE VALIDATION ---
+    const handleCardClick = (cardElement, stepObj) => {
+      // Speak option in female voice
+      tts.speak(stepObj.text, 'female');
+
+      if (stepObj.step === currentStepTarget) {
+        // CORRECT STEP CLICK
+        cardElement.classList.remove('bg-slate-900', 'border-slate-700/80');
+        cardElement.classList.add('bg-emerald-950/60', 'border-emerald-500', 'pointer-events-none', 'opacity-80');
+        
+        highlightStepIndicator(currentStepTarget);
+        totalScore += 25;
+        updateScoreboard();
+
+        if (currentStepTarget === 4) {
+          // COMPLETED ALL 4 STEPS OF CASE
+          sfx.playFanfare();
+          if (typeof confetti === 'function') {
+            confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+          }
+          streakCount++;
+          totalScore += 100; // Case Bonus
+          updateScoreboard();
+
+          setTimeout(() => {
+            currentModuleIndex++;
+            if (currentModuleIndex < activeModules.length) {
+              loadCurrentCase();
+            } else {
+              endGame();
+            }
+          }, 1200);
+
+        } else {
+          currentStepTarget++;
+          updateTargetText();
+        }
+
+      } else {
+        // OUT OF SEQUENCE / WRONG STEP CLICK (-100 PTS & RESET CASE)
+        sfx.playBuzzer();
+        streakCount = 0;
+        totalScore = Math.max(0, totalScore - 100);
+        updateScoreboard();
+
+        // Screen Shake Animation
+        document.body.classList.add('bam-shake');
+        bamBanner.classList.remove('hidden');
+
+        setTimeout(() => {
+          document.body.classList.remove('bam-shake');
+        }, 500);
+
+        // Reset current case sequence attempts
+        setTimeout(() => {
+          loadCurrentCase();
+        }, 1400);
+      }
+    };
+
+    // --- STEP INDICATORS UPDATE ---
+    const resetStepIndicators = () => {
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`stepIndicator${i}`);
+        el.className = "p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-500 transition";
+      }
+    };
+
+    const highlightStepIndicator = (stepNum) => {
+      const el = document.getElementById(`stepIndicator${stepNum}`);
+      el.className = "p-2 rounded-lg border-2 border-emerald-400 bg-emerald-900/60 text-emerald-300 font-black glow-step transition";
+    };
+
+    const updateTargetText = () => {
+      const targetNames = [
+        "Step 1: Tools & Devices",
+        "Step 2: Procedure & Mechanism",
+        "Step 3: Potential Harm & Prevention",
+        "Step 4: Completion & Documentation"
+      ];
+      currentStepTargetText.textContent = `Select ${targetNames[currentStepTarget - 1]}`;
+    };
+
+    const updateScoreboard = () => {
+      scoreDisplay.textContent = totalScore;
+      streakDisplay.textContent = `${streakCount} 🔥`;
+    };
+
+    speakerScenarioBtn.addEventListener('click', () => {
+      const currentCase = activeModules[currentModuleIndex];
+      tts.speak(currentCase.prompt, 'male');
+    });
+
+    // --- END GAME ---
+    const endGame = () => {
+      gameplaySection.classList.add('hidden');
+      resultsSection.classList.remove('hidden');
+
+      finalScoreDisplay.textContent = `${totalScore} Pts`;
+      finalSummaryText.textContent = `Test Taker: ${takerName} (${takerID}) successfully completed all ${activeModules.length} clinical workflow scenarios.`;
+
+      if (totalScore >= activeModules.length * 150) {
+        finalGradeBadge.className = "mt-4 inline-block px-5 py-2 rounded-full font-bold text-xs uppercase bg-emerald-900/80 text-emerald-300 border border-emerald-500/50";
+        finalGradeBadge.textContent = "GRADE: CLINICAL MASTER & SAFETY EXPERT";
+      } else {
+        finalGradeBadge.className = "mt-4 inline-block px-5 py-2 rounded-full font-bold text-xs uppercase bg-amber-900/80 text-amber-300 border border-amber-500/50";
+        finalGradeBadge.textContent = "GRADE: COMPETENT - REVIEW PROCEDURAL PRIORITY";
+      }
+    };
+
+    restartGameBtn.addEventListener('click', () => {
+      resultsSection.classList.add('hidden');
+      registrationSection.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
